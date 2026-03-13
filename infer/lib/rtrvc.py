@@ -405,6 +405,16 @@ class RVC:
             self.cache_pitchf[4 - pitch.shape[0] :] = pitchf[3:-1]
             cache_pitch = self.cache_pitch[None, -p_len:]
             cache_pitchf = self.cache_pitchf[None, -p_len:] * return_length2 / return_length
+            # Backfill leading zeros in the output region of the pitch cache.
+            # On the first speech chunk, the cache isn't fully populated yet,
+            # leaving ~15 frames of zero pitch that cause silence/noise.
+            out_start = p_len - return_length
+            out_cp = cache_pitch[0, out_start:]
+            nz = (out_cp > 0).nonzero(as_tuple=True)[0]
+            if nz.numel() > 0 and nz[0] > 0:
+                first_valid = int(nz[0].item())
+                cache_pitch[0, out_start : out_start + first_valid] = out_cp[first_valid]
+                cache_pitchf[0, out_start : out_start + first_valid] = cache_pitchf[0, out_start + first_valid]
             # Diagnostics: f0 statistics for the output region
             out_pitchf = cache_pitchf[0, -return_length:]
             voiced = (out_pitchf > 0).sum().item()
