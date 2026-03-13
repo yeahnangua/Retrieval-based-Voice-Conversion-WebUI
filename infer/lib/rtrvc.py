@@ -405,6 +405,18 @@ class RVC:
             self.cache_pitchf[4 - pitch.shape[0] :] = pitchf[3:-1]
             cache_pitch = self.cache_pitch[None, -p_len:]
             cache_pitchf = self.cache_pitchf[None, -p_len:] * return_length2 / return_length
+            # Diagnostics: f0 statistics for the output region
+            out_pitchf = cache_pitchf[0, -return_length:]
+            voiced = (out_pitchf > 0).sum().item()
+            total_f0 = out_pitchf.shape[0]
+            printt(
+                "f0: voiced=%d/%d (%.0f%%), range=[%.0f, %.0f]Hz",
+                voiced,
+                total_f0,
+                100.0 * voiced / max(total_f0, 1),
+                out_pitchf[out_pitchf > 0].min().item() if voiced > 0 else 0,
+                out_pitchf.max().item(),
+            )
         t4 = ttime()
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         feats = feats[:, :p_len, :]

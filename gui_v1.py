@@ -922,6 +922,10 @@ if __name__ == "__main__":
                 )
             # infer
             if self.function == "vc":
+                input_energy = torch.sum(
+                    self.input_wav[-self.block_frame :] ** 2
+                ).item()
+                printt("input energy = %.6f", input_energy)
                 infer_wav = self.rvc.infer(
                     self.input_wav_res,
                     self.block_frame_16k,
@@ -1033,9 +1037,27 @@ if __name__ == "__main__":
             self.sola_buffer[:] = infer_wav[
                 self.block_frame - self.sola_buffer_frame : self.block_frame
             ]
+            out_chunk = infer_wav[: self.block_frame]
+            # Diagnostics: check for silent regions within the output chunk
+            n_segments = 10
+            seg_len = self.block_frame // n_segments
+            energies = [
+                torch.sum(out_chunk[i * seg_len : (i + 1) * seg_len] ** 2).item()
+                for i in range(n_segments)
+            ]
+            max_e = max(energies) if energies else 1.0
+            if max_e > 1e-6:
+                silent_segs = [
+                    i for i, e in enumerate(energies) if e < max_e * 0.001
+                ]
+                if silent_segs:
+                    printt(
+                        "!!! Silent segments in output: %s (of %d)",
+                        silent_segs,
+                        n_segments,
+                    )
             outdata[:] = (
-                infer_wav[: self.block_frame]
-                .repeat(self.gui_config.channels, 1)
+                out_chunk.repeat(self.gui_config.channels, 1)
                 .t()
                 .cpu()
                 .numpy()
