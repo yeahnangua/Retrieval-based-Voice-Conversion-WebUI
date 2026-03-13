@@ -705,7 +705,10 @@ if __name__ == "__main__":
             return True
 
         def start_vc(self):
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            elif torch.backends.mps.is_available():
+                torch.mps.empty_cache()
             self.rvc = rvc_for_realtime.RVC(
                 self.gui_config.pitch,
                 self.gui_config.formant,
