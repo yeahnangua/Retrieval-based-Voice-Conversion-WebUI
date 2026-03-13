@@ -16,32 +16,32 @@ else
   echo "Create venv..."
   requirements_file="requirements.txt"
 
-  # Check if Python 3 is installed
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "Python 3 not found. Attempting to install..."
+  # Check if Python 3.10 is installed
+  if ! command -v python3.10 >/dev/null 2>&1; then
+    echo "Python 3.10 not found. Attempting to install..."
     if [ "$(uname)" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
-      brew install python3
+      brew install python@3.10
     elif [ "$(uname)" = "Linux" ] && command -v apt-get >/dev/null 2>&1; then
       sudo apt-get update
-      sudo apt-get install python3 python3-venv
+      sudo apt-get install python3.10 python3.10-venv
     else
-      echo "Please install Python 3 manually."
+      echo "Please install Python 3.10 manually."
       exit 1
     fi
   fi
 
-  python3 -m venv .venv
+  python3.10 -m venv .venv
   . .venv/bin/activate
 
   # Check if required packages are installed and install them if not
   if [ -f "${requirements_file}" ]; then
-    installed_packages=$(python3 -m pip freeze)
+    installed_packages=$(python3.10 -m pip freeze)
     while IFS= read -r package; do
       expr "${package}" : "^#.*" > /dev/null && continue
       package_name=$(echo "${package}" | sed 's/[<>=!].*//')
       if ! echo "${installed_packages}" | grep -q "${package_name}"; then
         echo "${package_name} not found. Attempting to install..."
-        python3 -m pip install --upgrade "${package}"
+        python3.10 -m pip install --upgrade "${package}"
       fi
     done < "${requirements_file}"
   else
@@ -59,4 +59,4 @@ if [ $? -ne 0 ]; then
 fi
 
 # Run the main script
-python3 infer-web.py --pycmd python3
+python3.10 infer-web.py --pycmd python3.10
