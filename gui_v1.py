@@ -990,35 +990,48 @@ if __name__ == "__main__":
                     rms1 / rms2, torch.tensor(1 - self.gui_config.rms_mix_rate)
                 )
             # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
-            conv_input = infer_wav[
-                None, None, : self.sola_buffer_frame + self.sola_search_frame
-            ]
-            cor_nom = F.conv1d(conv_input, self.sola_buffer[None, None, :])
-            cor_den = torch.sqrt(
-                F.conv1d(
-                    conv_input**2,
-                    torch.ones(1, 1, self.sola_buffer_frame, device=self.config.device),
+            # Check if sola_buffer has valid audio (non-zero)
+            buf_energy = torch.sum(self.sola_buffer**2).item()
+            if buf_energy > 1e-6:
+                conv_input = infer_wav[
+                    None, None, : self.sola_buffer_frame + self.sola_search_frame
+                ]
+                cor_nom = F.conv1d(conv_input, self.sola_buffer[None, None, :])
+                cor_den = torch.sqrt(
+                    F.conv1d(
+                        conv_input**2,
+                        torch.ones(
+                            1, 1, self.sola_buffer_frame, device=self.config.device
+                        ),
+                    )
+                    + 1e-8
                 )
-                + 1e-8
-            )
-            sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
-            sola_corr = (cor_nom[0, 0] / cor_den[0, 0])[sola_offset].item()
-            printt("sola_offset = %d, corr = %.4f", int(sola_offset), sola_corr)
-            infer_wav = infer_wav[sola_offset:]
-            if "privateuseone" in str(self.config.device) or not self.gui_config.use_pv:
-                infer_wav[: self.sola_buffer_frame] *= self.fade_in_window
-                infer_wav[: self.sola_buffer_frame] += (
-                    self.sola_buffer * self.fade_out_window
-                )
+                sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
+                sola_corr = (cor_nom[0, 0] / cor_den[0, 0])[sola_offset].item()
+                printt("sola_offset = %d, corr = %.4f", int(sola_offset), sola_corr)
+                infer_wav = infer_wav[sola_offset:]
+                if (
+                    "privateuseone" in str(self.config.device)
+                    or not self.gui_config.use_pv
+                ):
+                    infer_wav[: self.sola_buffer_frame] *= self.fade_in_window
+                    infer_wav[: self.sola_buffer_frame] += (
+                        self.sola_buffer * self.fade_out_window
+                    )
+                else:
+                    infer_wav[: self.sola_buffer_frame] = phase_vocoder(
+                        self.sola_buffer,
+                        infer_wav[: self.sola_buffer_frame],
+                        self.fade_out_window,
+                        self.fade_in_window,
+                    )
             else:
-                infer_wav[: self.sola_buffer_frame] = phase_vocoder(
-                    self.sola_buffer,
-                    infer_wav[: self.sola_buffer_frame],
-                    self.fade_out_window,
-                    self.fade_in_window,
-                )
+                printt("sola_buffer is empty, skipping crossfade")
+            # Save buffer from end of output block (not from tail beyond it)
+            # This prevents the zero-buffer feedback loop caused by
+            # edge effects at the synthesizer output tail.
             self.sola_buffer[:] = infer_wav[
-                self.block_frame : self.block_frame + self.sola_buffer_frame
+                self.block_frame - self.sola_buffer_frame : self.block_frame
             ]
             outdata[:] = (
                 infer_wav[: self.block_frame]
