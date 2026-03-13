@@ -856,6 +856,14 @@ if __name__ == "__main__":
             """
             global flag_vc
             start_time = time.perf_counter()
+            if status:
+                printt("!!! AUDIO STATUS: %s", status)
+            if frames != self.block_frame:
+                printt(
+                    "!!! frames mismatch: got %d, expected %d",
+                    frames,
+                    self.block_frame,
+                )
             indata = librosa.to_mono(indata.T)
             if self.gui_config.threhold > -60:
                 indata = np.append(self.rms_buffer, indata)
@@ -917,6 +925,17 @@ if __name__ == "__main__":
                 )
                 if self.resampler2 is not None:
                     infer_wav = self.resampler2(infer_wav)
+                expected_len = (
+                    self.block_frame
+                    + self.sola_buffer_frame
+                    + self.sola_search_frame
+                )
+                if infer_wav.shape[0] < expected_len:
+                    printt(
+                        "!!! infer_wav too short: %d < %d",
+                        infer_wav.shape[0],
+                        expected_len,
+                    )
             elif self.gui_config.I_noise_reduce:
                 infer_wav = self.input_wav_denoise[self.extra_frame :].clone()
             else:
@@ -977,7 +996,8 @@ if __name__ == "__main__":
                 + 1e-8
             )
             sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
-            printt("sola_offset = %d", int(sola_offset))
+            sola_corr = (cor_nom[0, 0] / cor_den[0, 0])[sola_offset].item()
+            printt("sola_offset = %d, corr = %.4f", int(sola_offset), sola_corr)
             infer_wav = infer_wav[sola_offset:]
             if "privateuseone" in str(self.config.device) or not self.gui_config.use_pv:
                 infer_wav[: self.sola_buffer_frame] *= self.fade_in_window
