@@ -120,11 +120,11 @@ if __name__ == "__main__":
             self.sr_type: str = "sr_model"
             self.block_time: float = 0.25  # s
             self.threhold: int = -60
-            self.crossfade_time: float = 0.05
+            self.crossfade_time: float = 0.12
             self.extra_time: float = 2.5
             self.I_noise_reduce: bool = False
             self.O_noise_reduce: bool = False
-            self.use_pv: bool = False
+            self.use_pv: bool = True
             self.rms_mix_rate: float = 0.0
             self.index_rate: float = 0.0
             self.n_cpu: int = min(n_cpu, 4)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
                         "index_rate": 0,
                         "rms_mix_rate": 0,
                         "block_time": 0.25,
-                        "crossfade_length": 0.05,
+                        "crossfade_length": 0.12,
                         "extra_time": 2.5,
                         "n_cpu": 4,
                         "f0method": "rmvpe",
@@ -461,7 +461,7 @@ if __name__ == "__main__":
                                     key="crossfade_length",
                                     resolution=0.01,
                                     orientation="h",
-                                    default_value=data.get("crossfade_length", 0.05),
+                                    default_value=data.get("crossfade_length", 0.12),
                                     enable_events=True,
                                 ),
                             ],
@@ -749,8 +749,8 @@ if __name__ == "__main__":
                 )
                 * self.zc
             )
-            self.sola_buffer_frame = min(self.crossfade_frame, 4 * self.zc)
-            self.sola_search_frame = self.zc
+            self.sola_buffer_frame = min(self.crossfade_frame, 8 * self.zc)
+            self.sola_search_frame = 4 * self.zc
             self.extra_frame = (
                 int(
                     np.round(
@@ -1004,7 +1004,14 @@ if __name__ == "__main__":
             total_time = time.perf_counter() - start_time
             if flag_vc:
                 self.window["infer_time"].update(int(total_time * 1000))
-            printt("Infer time: %.2f", total_time)
+            if total_time > self.gui_config.block_time:
+                printt(
+                    "Infer time: %.2f > block_time %.2f — audio will tear! Increase block_time.",
+                    total_time,
+                    self.gui_config.block_time,
+                )
+            else:
+                printt("Infer time: %.2f", total_time)
 
         def update_devices(self, hostapi_name=None):
             """获取设备列表"""
