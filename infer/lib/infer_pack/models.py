@@ -623,6 +623,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         **kwargs
     ):
         super(SynthesizerTrnMs256NSFsid, self).__init__()
+        self.noise_scale = 0.66666  # can be lowered for streaming
         if isinstance(sr, str):
             sr = sr2sr[sr]
         self.spec_channels = spec_channels
@@ -763,14 +764,14 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
             flow_head = torch.clamp(skip_head - 24, min=0)
             dec_head = head - int(flow_head.item())
             m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths, flow_head)
-            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
+            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * self.noise_scale) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)
             z = z[:, :, dec_head : dec_head + length]
             x_mask = x_mask[:, :, dec_head : dec_head + length]
             nsff0 = nsff0[:, head : head + length]
         else:
             m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
-            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
+            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * self.noise_scale) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, nsff0, g=g, n_res=return_length2)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -857,6 +858,7 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         **kwargs
     ):
         super(SynthesizerTrnMs256NSFsid_nono, self).__init__()
+        self.noise_scale = 0.66666  # can be lowered for streaming
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
         self.hidden_channels = hidden_channels
@@ -979,13 +981,13 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
             flow_head = torch.clamp(skip_head - 24, min=0)
             dec_head = head - int(flow_head.item())
             m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths, flow_head)
-            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
+            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * self.noise_scale) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)
             z = z[:, :, dec_head : dec_head + length]
             x_mask = x_mask[:, :, dec_head : dec_head + length]
         else:
             m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
-            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
+            z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * self.noise_scale) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g, n_res=return_length2)
         return o, x_mask, (z, z_p, m_p, logs_p)

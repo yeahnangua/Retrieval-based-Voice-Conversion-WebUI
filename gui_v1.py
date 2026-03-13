@@ -10,11 +10,6 @@ os.environ["OMP_NUM_THREADS"] = "4"
 if sys.platform == "darwin":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
-# Suppress noisy PyTorch deprecation warnings (MPS tensor resize, stft, fft)
-# Our diagnostics use printt() so they won't be affected.
-warnings.simplefilter("ignore", UserWarning)
-warnings.simplefilter("ignore", FutureWarning)
-
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import multiprocessing
@@ -95,6 +90,10 @@ if __name__ == "__main__":
     import torch
     import torch.nn.functional as F
     import torchaudio.transforms as tat
+
+    # Must be AFTER torch import — torch resets warning filters during import
+    warnings.simplefilter("ignore", UserWarning)
+    warnings.simplefilter("ignore", FutureWarning)
 
     from infer.lib import rtrvc as rvc_for_realtime
     from i18n.i18n import I18nAuto
