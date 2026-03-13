@@ -5,7 +5,7 @@ import traceback
 from infer.lib import jit
 from infer.lib.jit.get_synthesizer import get_synthesizer
 from time import time as ttime
-import fairseq
+from infer.modules.vc.hubert import HubertModelWrapper
 import faiss
 import numpy as np
 import parselmouth
@@ -55,14 +55,6 @@ class RVC:
         初始化
         """
         try:
-            if config.dml == True:
-
-                def forward_dml(ctx, x, scale):
-                    ctx.scale = scale
-                    res = x.clone().detach()
-                    return res
-
-                fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
             # global config
             self.config = config
             self.inp_q = inp_q
@@ -96,11 +88,7 @@ class RVC:
             self.resample_kernel = {}
 
             if last_rvc is None:
-                models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
-                    ["assets/hubert/hubert_base.pt"],
-                    suffix="",
-                )
-                hubert_model = models[0]
+                hubert_model = HubertModelWrapper()
                 hubert_model = hubert_model.to(self.device)
                 if self.is_half:
                     hubert_model = hubert_model.half()

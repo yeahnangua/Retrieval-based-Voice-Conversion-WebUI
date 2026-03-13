@@ -20,7 +20,6 @@ import torch, platform
 import numpy as np
 import gradio as gr
 import faiss
-import fairseq
 import pathlib
 import json
 from time import sleep
@@ -54,14 +53,6 @@ config = Config()
 vc = VC(config)
 
 
-if config.dml == True:
-
-    def forward_dml(ctx, x, scale):
-        ctx.scale = scale
-        res = x.clone().detach()
-        return res
-
-    fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
 i18n = I18nAuto()
 logger.info(i18n)
 # 判断是否有能用来训练和加速推理的N卡
