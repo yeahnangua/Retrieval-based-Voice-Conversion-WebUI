@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ "$(uname)" = "Darwin" ]; then
   # macOS specific env:
@@ -11,7 +11,7 @@ fi
 
 if [ -d ".venv" ]; then
   echo "Activate venv..."
-  . .venv/bin/activate
+  source .venv/bin/activate
 else
   echo "Create venv..."
   requirements_file="requirements.txt"
@@ -31,7 +31,7 @@ else
   fi
 
   python3.10 -m venv .venv
-  . .venv/bin/activate
+  source .venv/bin/activate
 
   # Check if required packages are installed and install them if not
   if [ -f "${requirements_file}" ]; then
