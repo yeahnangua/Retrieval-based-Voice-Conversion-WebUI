@@ -113,7 +113,7 @@ class RVC:
                     self.net_g = self.net_g.float()
                 # Reduce VAE noise for streaming — makes chunks more consistent
                 if hasattr(self.net_g, "noise_scale"):
-                    self.net_g.noise_scale = 0.1
+                    self.net_g.noise_scale = 0.4
 
             def set_jit_model():
                 jit_pth_path = self.pth_path.rstrip(".pth")

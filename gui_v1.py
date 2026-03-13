@@ -840,6 +840,7 @@ if __name__ == "__main__":
                     samplerate=self.gui_config.samplerate,
                     channels=self.gui_config.channels,
                     dtype="float32",
+                    latency="high",
                     extra_settings=extra_settings,
                 )
                 self.stream.start()
