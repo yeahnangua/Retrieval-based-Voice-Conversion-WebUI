@@ -1010,9 +1010,23 @@ if __name__ == "__main__":
                     )
                     + 1e-8
                 )
-                sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
-                sola_corr = (cor_nom[0, 0] / cor_den[0, 0])[sola_offset].item()
-                printt("sola_offset = %d, corr = %.4f", int(sola_offset), sola_corr)
+                cor_val = cor_nom[0, 0] / cor_den[0, 0]
+                sola_offset = torch.argmax(cor_val)
+                sola_corr = cor_val[sola_offset].item()
+                # If correlation is too low, don't trust the offset — use 0
+                if sola_corr < 0.1:
+                    printt(
+                        "sola_offset = %d, corr = %.4f (too low, using offset=0)",
+                        int(sola_offset),
+                        sola_corr,
+                    )
+                    sola_offset = torch.tensor(0)
+                else:
+                    printt(
+                        "sola_offset = %d, corr = %.4f",
+                        int(sola_offset),
+                        sola_corr,
+                    )
                 infer_wav = infer_wav[sola_offset:]
                 if (
                     "privateuseone" in str(self.config.device)
@@ -1031,12 +1045,23 @@ if __name__ == "__main__":
                     )
             else:
                 printt("sola_buffer is empty, skipping crossfade")
-            # Save buffer from end of output block (not from tail beyond it)
-            # This prevents the zero-buffer feedback loop caused by
-            # edge effects at the synthesizer output tail.
-            self.sola_buffer[:] = infer_wav[
-                self.block_frame - self.sola_buffer_frame : self.block_frame
+            # Save buffer: prefer continuation region (proper SOLA overlap),
+            # fall back to output tail if continuation is near-silent
+            # (synthesizer edge effect).
+            continuation = infer_wav[
+                self.block_frame : self.block_frame + self.sola_buffer_frame
             ]
+            cont_energy = torch.sum(continuation**2).item()
+            if cont_energy > 1e-6:
+                self.sola_buffer[:] = continuation
+            else:
+                self.sola_buffer[:] = infer_wav[
+                    self.block_frame - self.sola_buffer_frame : self.block_frame
+                ]
+                printt(
+                    "continuation silent (%.2e), using output tail for sola_buffer",
+                    cont_energy,
+                )
             out_chunk = infer_wav[: self.block_frame]
             # Diagnostics: check for silent regions within the output chunk
             n_segments = 10
