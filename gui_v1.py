@@ -11,7 +11,9 @@ if sys.platform == "darwin":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 # Suppress noisy PyTorch deprecation warnings (MPS tensor resize, stft, fft)
-warnings.filterwarnings("ignore", message=".*was resized.*", category=UserWarning)
+warnings.filterwarnings("ignore", ".*resized.*")
+warnings.filterwarnings("ignore", ".*deprecated.*")
+warnings.filterwarnings("ignore", category=UserWarning, module=r"torch\..*")
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
