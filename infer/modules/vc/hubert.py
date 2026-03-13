@@ -22,7 +22,14 @@ class HubertModelWrapper(nn.Module):
         from transformers import HubertModel
 
         logger.info("Loading HuBERT model via transformers (%s)...", self.HUBERT_REPO)
-        self.model = HubertModel.from_pretrained(self.HUBERT_REPO)
+        try:
+            self.model = HubertModel.from_pretrained(self.HUBERT_REPO)
+        except OSError as e:
+            raise OSError(
+                f"Failed to download HuBERT model. If you are behind a firewall, "
+                f"set HF_ENDPOINT env var (e.g. export HF_ENDPOINT=https://hf-mirror.com) "
+                f"and retry. Original error: {e}"
+            ) from e
         self.num_layers = self.model.config.num_hidden_layers  # 12
 
         # final_proj: needed by RVC v1 (projects 768 -> 256)

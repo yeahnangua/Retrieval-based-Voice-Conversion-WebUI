@@ -171,18 +171,18 @@ if __name__ == "__main__":
                             self.update_devices()
                             data["sg_hostapi"] = self.hostapis[0]
                             data["sg_input_device"] = self.input_devices[
-                                self.input_devices_indices.index(sd.default.device[0])
+                                self.input_devices_indices.index(sd.default.device[0]) if sd.default.device[0] in self.input_devices_indices else 0
                             ]
                             data["sg_output_device"] = self.output_devices[
-                                self.output_devices_indices.index(sd.default.device[1])
+                                self.output_devices_indices.index(sd.default.device[1]) if sd.default.device[1] in self.output_devices_indices else 0
                             ]
                     else:
                         data["sg_hostapi"] = self.hostapis[0]
                         data["sg_input_device"] = self.input_devices[
-                            self.input_devices_indices.index(sd.default.device[0])
+                            self.input_devices_indices.index(sd.default.device[0]) if sd.default.device[0] in self.input_devices_indices else 0
                         ]
                         data["sg_output_device"] = self.output_devices[
-                            self.output_devices_indices.index(sd.default.device[1])
+                            self.output_devices_indices.index(sd.default.device[1]) if sd.default.device[1] in self.output_devices_indices else 0
                         ]
             except:
                 with open("configs/inuse/config.json", "w") as j:
@@ -192,10 +192,10 @@ if __name__ == "__main__":
                         "sg_hostapi": self.hostapis[0],
                         "sg_wasapi_exclusive": False,
                         "sg_input_device": self.input_devices[
-                            self.input_devices_indices.index(sd.default.device[0])
+                            self.input_devices_indices.index(sd.default.device[0]) if sd.default.device[0] in self.input_devices_indices else 0
                         ],
                         "sg_output_device": self.output_devices[
-                            self.output_devices_indices.index(sd.default.device[1])
+                            self.output_devices_indices.index(sd.default.device[1]) if sd.default.device[1] in self.output_devices_indices else 0
                         ],
                         "sr_type": "sr_model",
                         "threhold": -60,
@@ -976,11 +976,7 @@ if __name__ == "__main__":
                 )
                 + 1e-8
             )
-            if sys.platform == "darwin":
-                _, sola_offset = torch.max(cor_nom[0, 0] / cor_den[0, 0])
-                sola_offset = sola_offset.item()
-            else:
-                sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
+            sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
             printt("sola_offset = %d", int(sola_offset))
             infer_wav = infer_wav[sola_offset:]
             if "privateuseone" in str(self.config.device) or not self.gui_config.use_pv:

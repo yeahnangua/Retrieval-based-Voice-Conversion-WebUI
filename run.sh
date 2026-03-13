@@ -4,6 +4,8 @@ if [ "$(uname)" = "Darwin" ]; then
   # macOS specific env:
   export PYTORCH_ENABLE_MPS_FALLBACK=1
   export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+  # HuggingFace mirror for users behind GFW (comment out if not needed)
+  export HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
 elif [ "$(uname)" != "Linux" ]; then
   echo "Unsupported operating system."
   exit 1
@@ -59,4 +61,4 @@ if [ $? -ne 0 ]; then
 fi
 
 # Run the main script
-python3.10 infer-web.py --pycmd python3.10
+python3.10 gui_v1.py
