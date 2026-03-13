@@ -528,7 +528,7 @@ if __name__ == "__main__":
                     sg.Text("0", key="infer_time"),
                 ],
             ]
-            self.window = sg.Window("RVC - GUI", layout=layout, finalize=True)
+            self.window = sg.Window("RVC - 实时变声", layout=layout, finalize=True)
             self.event_handler()
 
         def event_handler(self):
